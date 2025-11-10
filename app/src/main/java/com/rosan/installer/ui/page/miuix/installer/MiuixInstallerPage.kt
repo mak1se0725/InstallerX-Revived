@@ -37,6 +37,7 @@ import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallChoiceCon
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallCompletedContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallExtendedMenuContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallFailedContent
+import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallModuleContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallPrepareContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallPreparePermissionContent
 import com.rosan.installer.ui.page.miuix.installer.sheetcontent.InstallPreparingContent
@@ -118,6 +119,7 @@ fun MiuixInstallerPage(
             else -> stringResource(R.string.installer_install_app)
         }
 
+        is InstallerViewState.InstallingModule -> "Installing Module"
         is InstallerViewState.Installing -> stringResource(R.string.installer_installing)
         is InstallerViewState.InstallCompleted -> stringResource(R.string.installer_install_success)
         is InstallerViewState.InstallSuccess -> stringResource(R.string.installer_install_success)
@@ -369,6 +371,15 @@ fun MiuixInstallerPage(
                         appIcon = appIcon,
                         installer = installer,
                         viewModel = viewModel,
+                        onClose = closeSheet
+                    )
+                }
+
+                is InstallerViewState.InstallingModule -> {
+                    val moduleState = viewModel.state as InstallerViewState.InstallingModule
+                    InstallModuleContent(
+                        outputLines = moduleState.output,
+                        isFinished = moduleState.isFinished,
                         onClose = closeSheet
                     )
                 }

@@ -1,5 +1,10 @@
 package com.rosan.installer.ui.page.miuix.settings.preferred.subpage.lab
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,12 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.rosan.installer.R
+import com.rosan.installer.data.app.model.entity.RootImplementation
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewAction
 import com.rosan.installer.ui.page.main.settings.preferred.PreferredViewModel
 import com.rosan.installer.ui.page.miuix.widgets.MiuixBackButton
@@ -22,6 +29,8 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.extra.SpinnerEntry
+import top.yukonga.miuix.kmp.extra.SuperSpinner
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -67,6 +76,56 @@ fun MiuixLabPage(
                         checked = state.labShizukuHookMode,
                         onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeShizukuHookMode(it)) }
                     )
+                }
+            }
+            item { SmallTitle(stringResource(R.string.config_authorizer_root)) }
+            item {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = 12.dp)
+                ) {
+                    MiuixSwitchWidget(
+                        title = "Enable Module Flashing",
+                        description = "Requires Global Authorizer set to Root",
+                        checked = state.labRootEnableModuleFlash,
+                        onCheckedChange = { viewModel.dispatch(PreferredViewAction.LabChangeRootModuleFlash(it)) }
+                    )
+                    AnimatedVisibility(
+                        visible = state.labRootEnableModuleFlash,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        val currentRootImpl = state.labRootImplementation
+                        val data = remember {
+                            mapOf(
+                                RootImplementation.Magisk to "Magisk",
+                                RootImplementation.KernelSU to "KernelSU",
+                                RootImplementation.APatch to "APatch"
+                            )
+                        }
+
+                        val spinnerEntries = remember(data) {
+                            data.values.map { modeName ->
+                                SpinnerEntry(title = modeName)
+                            }
+                        }
+
+                        val selectedIndex = remember(currentRootImpl, data) {
+                            data.keys.toList().indexOf(currentRootImpl).coerceAtLeast(0)
+                        }
+
+                        SuperSpinner(
+                            title = "Choose Root Method",
+                            items = spinnerEntries,
+                            selectedIndex = selectedIndex,
+                            onSelectedIndexChange = { newIndex ->
+                                data.keys.elementAtOrNull(newIndex)?.let { impl ->
+                                    viewModel.dispatch(PreferredViewAction.LabChangeRootImplementation(impl))
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

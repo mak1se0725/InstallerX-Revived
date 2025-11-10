@@ -284,10 +284,14 @@ fun InstallPrepareContent(
             }
         }
 
-        val canInstall = entityToInstall != null &&
-                (entityToInstall.minSdk?.toIntOrNull()?.let { it <= Build.VERSION.SDK_INT } ?: true)
-        val isAPK =
-            containerType == DataType.APKS || containerType == DataType.XAPK || containerType == DataType.APKM || containerType == DataType.MIXED_MODULE_APK
+        val canInstall = when (primaryEntity) {
+            // Modules don't have an SDK constraint, so they can always be installed.
+            is AppEntity.ModuleEntity -> true
+            // For APKs, perform the existing SDK version check.
+            is AppEntity.BaseEntity -> (primaryEntity.minSdk?.toIntOrNull()?.let { it <= Build.VERSION.SDK_INT } ?: true)
+            // Disable installation for any other unknown entity type.
+            else -> false
+        }
 
         // "Expand" / "Collapse" Button
         if (viewModel.showExtendedMenu && canInstall)

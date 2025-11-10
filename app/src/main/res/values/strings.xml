@@ -395,6 +395,7 @@
     <string name="exception_dhizuku_dead_service">Dhizuku remote service died</string>
     <string name="exception_root_not_work">Couldn\'t access root</string>
     <string name="exception_app_process_not_work">Couldn\'t connect the authorizer</string>
+    <string name="exception_module_install_failed">Module installation command execution failed</string>
     <string name="old_version_prefix">Current</string>
     <string name="old_version_archived">Archived</string>
     <string name="upgrade_version_prefix">Upgrade</string>

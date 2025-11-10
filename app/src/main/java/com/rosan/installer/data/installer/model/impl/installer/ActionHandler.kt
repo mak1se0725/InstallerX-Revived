@@ -33,6 +33,7 @@ import com.rosan.installer.data.app.model.exception.AnalyseFailedAllFilesUnsuppo
 import com.rosan.installer.data.app.model.impl.AnalyserRepoImpl
 import com.rosan.installer.data.installer.model.entity.ConfirmationDetails
 import com.rosan.installer.data.installer.model.entity.ProgressEntity
+import com.rosan.installer.data.installer.model.entity.SelectInstallEntity
 import com.rosan.installer.data.installer.model.entity.UninstallInfo
 import com.rosan.installer.data.installer.model.exception.ResolveException
 import com.rosan.installer.data.installer.model.exception.ResolvedFailedNoInternetAccessException
@@ -51,6 +52,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -245,6 +247,76 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
     }
 
     private suspend fun install() {
+        Timber.d("[id=${installer.id}] install: Starting.")
+
+        // Get all entities marked for installation from the analysis results.
+        val entitiesToInstall = installer.analysisResults
+            .flatMap { it.appEntities }
+            .filter { it.selected }
+
+        if (entitiesToInstall.isEmpty()) {
+            Timber.w("[id=${installer.id}] install: No entities selected for installation. Finishing.")
+            installer.progress.emit(ProgressEntity.InstallFailed) // Or a more specific error
+            installer.error = IllegalStateException("No items were selected for installation.")
+            return
+        }
+
+        // --- LOGIC DISPATCHER ---
+        // Check the type of the first entity to decide the installation path.
+        // We assume a single session won't mix APKs and Modules.
+        val firstEntity = entitiesToInstall.first().app
+
+        if (firstEntity is AppEntity.ModuleEntity) {
+            // --- MODULE INSTALLATION PATH ---
+            installModule(firstEntity)
+        } else {
+            // --- APK INSTALLATION PATH (existing logic) ---
+            installApp(entitiesToInstall)
+        }
+    }
+
+    private suspend fun installModule(moduleEntity: AppEntity.ModuleEntity) {
+        Timber.d("[id=${installer.id}] installModule: Starting module installation for ${moduleEntity.name}")
+        // Emit initial state
+        installer.progress.emit(ProgressEntity.InstallingModule(listOf("Starting installation...")))
+
+        val outputLines = mutableListOf<String>()
+
+        try {
+            // Get the selected Root Implementation from settings. This is crucial.
+            val rootImplementation = appDataStore.getString(AppDataStore.LAB_ROOT_IMPLEMENTATION)
+                .map { com.rosan.installer.data.app.model.entity.RootImplementation.fromString(it) }
+                .first()
+
+            // Call the module installer backend, which returns a Flow.
+            val moduleInstallerFlow = com.rosan.installer.data.app.model.impl.ModuleInstallerRepoImpl.doInstallWork(
+                installer.config,
+                moduleEntity,
+                rootImplementation
+            )
+
+            // Collect the flow of output lines.
+            moduleInstallerFlow.collect { line ->
+                outputLines.add(line)
+                // Emit the new progress state with the updated list of logs.
+                installer.progress.emit(ProgressEntity.InstallingModule(outputLines.toList()))
+            }
+
+            // If the flow completes without an exception, it's a success.
+            Timber.d("[id=${installer.id}] installModule: Succeeded. Emitting ProgressEntity.InstallSuccess.")
+            installer.progress.emit(ProgressEntity.InstallSuccess)
+
+        } catch (e: Exception) {
+            Timber.e(e, "[id=${installer.id}] installModule: Failed.")
+            installer.error = e
+            // Add the error message to the output for the user to see.
+            outputLines.add("ERROR: ${e.message}")
+            installer.progress.emit(ProgressEntity.InstallingModule(outputLines.toList())) // Show final error line
+            installer.progress.emit(ProgressEntity.InstallFailed) // Then emit failure state
+        }
+    }
+
+    private suspend fun installApp(entitiesToInstall: List<SelectInstallEntity>) {
         Timber.d("[id=${installer.id}] install: Starting. Emitting ProgressEntity.Installing.")
         installer.progress.emit(ProgressEntity.Installing)
         runCatching {

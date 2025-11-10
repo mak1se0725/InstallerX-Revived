@@ -344,6 +344,7 @@
     <string name="exception_dhizuku_dead_service">Dhizuku遠端服務已經死亡</string>
     <string name="exception_root_not_work">請授予 ROOT 權限</string>
     <string name="exception_app_process_not_work">授權器啟動失敗</string>
+    <string name="exception_module_install_failed">模組安裝命令執行失敗</string>
     <string name="old_version_prefix">目前</string>
     <string name="old_version_archived">已歸檔</string>
     <string name="upgrade_version_prefix">升級</string>

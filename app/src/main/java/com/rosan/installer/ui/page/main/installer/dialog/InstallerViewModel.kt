@@ -102,7 +102,8 @@ class InstallerViewModel(
             is InstallerViewState.Resolving,
             is InstallerViewState.Preparing,
             is InstallerViewState.InstallExtendedMenu,
-            is InstallerViewState.InstallChoice -> false
+            is InstallerViewState.InstallChoice,
+            is InstallerViewState.InstallingModule -> false
 
             is InstallerViewState.InstallPrepare -> !(showMiuixSheetRightActionSettings || showMiuixPermissionList)
             is InstallerViewState.Installing -> !disableNotificationOnDismiss
@@ -369,19 +370,33 @@ class InstallerViewModel(
                     }
 
                     is ProgressEntity.InstallFailed -> {
-                        newState = InstallerViewState.InstallFailed
                         autoInstallJob?.cancel()
-                        if (newPackageNameFromProgress == null && repo.analysisResults.size == 1) {
-                            newPackageNameFromProgress = repo.analysisResults.first().packageName
+                        // If we were installing a module, just mark it as finished instead of switching state.
+                        if (state is InstallerViewState.InstallingModule) {
+                            newState = (state as InstallerViewState.InstallingModule).copy(isFinished = true)
+                        } else {
+                            newState = InstallerViewState.InstallFailed
+                            if (newPackageNameFromProgress == null && repo.analysisResults.size == 1) {
+                                newPackageNameFromProgress = repo.analysisResults.first().packageName
+                            }
                         }
                     }
 
                     is ProgressEntity.InstallSuccess -> {
-                        newState = InstallerViewState.InstallSuccess
                         autoInstallJob?.cancel()
-                        if (newPackageNameFromProgress == null && repo.analysisResults.size == 1) {
-                            newPackageNameFromProgress = repo.analysisResults.first().packageName
+                        // If a module installation succeeded, just mark it as finished.
+                        if (state is InstallerViewState.InstallingModule) {
+                            newState = (state as InstallerViewState.InstallingModule).copy(isFinished = true)
+                        } else {
+                            newState = InstallerViewState.InstallSuccess
+                            if (newPackageNameFromProgress == null && repo.analysisResults.size == 1) {
+                                newPackageNameFromProgress = repo.analysisResults.first().packageName
+                            }
                         }
+                    }
+
+                    is ProgressEntity.InstallingModule -> {
+                        newState = InstallerViewState.InstallingModule(progress.output)
                     }
 
                     is ProgressEntity.Uninstalling -> {
