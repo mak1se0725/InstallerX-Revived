@@ -3,7 +3,9 @@ package com.rosan.installer.data.app.model.impl.installer
 import com.rosan.installer.ICommandOutputListener
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.RootImplementation
+import com.rosan.installer.data.app.model.exception.ModuleInstallCmdInitException
 import com.rosan.installer.data.app.model.exception.ModuleInstallException
+import com.rosan.installer.data.app.model.exception.ModuleInstallExitCodeNonZeroException
 import com.rosan.installer.data.app.repo.ModuleInstallerRepo
 import com.rosan.installer.data.app.util.sourcePath
 import com.rosan.installer.data.recycle.util.useUserService
@@ -39,7 +41,7 @@ object ProcessModuleInstallerRepoImpl : ModuleInstallerRepo {
             }
 
             override fun onError(line: String) {
-                trySend("ERR: $line")
+                trySend(line)
             }
 
             override fun onComplete(exitCode: Int) {
@@ -48,7 +50,7 @@ object ProcessModuleInstallerRepoImpl : ModuleInstallerRepo {
                     close() // Close the flow successfully
                 } else {
                     Timber.e("Module installation command failed with exit code: $exitCode")
-                    close(ModuleInstallException("Command failed with exit code $exitCode"))
+                    close(ModuleInstallExitCodeNonZeroException("Command failed with exit code $exitCode"))
                 }
             }
         }
@@ -59,13 +61,13 @@ object ProcessModuleInstallerRepoImpl : ModuleInstallerRepo {
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to initiate module installation.")
-            close(ModuleInstallException("Failed to initiate command: ${e.message}", e))
+            close(ModuleInstallCmdInitException("Failed to initiate command: ${e.message}", e))
         }
 
         // This is called when the Flow is cancelled (e.g., user navigates away)
         awaitClose {
             Timber.d("Module installation flow was cancelled by the collector.")
-            // Note: We can't easily kill the remote root process here.
+            // We can't easily kill the remote root process here.
             // The process will continue to run in the background.
         }
     }

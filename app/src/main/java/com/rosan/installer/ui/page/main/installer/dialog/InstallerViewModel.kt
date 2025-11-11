@@ -15,7 +15,6 @@ import com.rosan.installer.R
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataType
 import com.rosan.installer.data.app.model.entity.PackageAnalysisResult
-import com.rosan.installer.data.app.model.exception.ModuleInstallException
 import com.rosan.installer.data.app.repo.AppIconRepo
 import com.rosan.installer.data.app.repo.PARepo
 import com.rosan.installer.data.app.util.InstallOption
@@ -376,7 +375,7 @@ class InstallerViewModel(
                     is ProgressEntity.InstallFailed -> {
                         autoInstallJob?.cancel()
                         // If we were installing a module, just mark it as finished instead of switching state.
-                        if (state is InstallerViewState.InstallingModule && repo.error !is ModuleInstallException) {
+                        if (state is InstallerViewState.InstallingModule/* && repo.error !is ModuleInstallException*/) {
                             newState = (state as InstallerViewState.InstallingModule).copy(isFinished = true)
                         } else {
                             newState = InstallerViewState.InstallFailed

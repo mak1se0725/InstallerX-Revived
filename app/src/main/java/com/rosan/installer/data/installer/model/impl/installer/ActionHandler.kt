@@ -856,7 +856,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
         uri: Uri,
         retry: Int = 3
     ): List<DataEntity> {
-        // HACK: wait for PermissionRecords ok.
+        // Wait for PermissionRecords ok.
         if (activity.checkCallingOrSelfUriPermission(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
             ) != PackageManager.PERMISSION_GRANTED &&
@@ -987,7 +987,7 @@ class ActionHandler(scope: CoroutineScope, installer: InstallerRepo) :
             // Validate if the URL points to a likely installer file.
             // First, check the URL path extension.
             val path = uri.path ?: ""
-            val isSupportedExtension = listOf(".apk", ".xapk", ".apkm", ".apks").any { ext ->
+            val isSupportedExtension = listOf(".apk", ".xapk", ".apkm", ".apks", ".zip").any { ext ->
                 path.endsWith(ext, ignoreCase = true)
             }
             // As a fallback, check the Content-Type header from the server response.

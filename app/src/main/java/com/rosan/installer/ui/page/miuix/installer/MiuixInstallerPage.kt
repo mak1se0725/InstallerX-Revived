@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.rosan.installer.R
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataType
-import com.rosan.installer.data.app.model.exception.ModuleInstallException
 import com.rosan.installer.data.installer.repo.InstallerRepo
 import com.rosan.installer.ui.page.main.installer.dialog.InstallerViewAction
 import com.rosan.installer.ui.page.main.installer.dialog.InstallerViewModel
@@ -367,19 +366,19 @@ fun MiuixInstallerPage(
                 }
 
                 is InstallerViewState.InstallFailed -> {
-                    if (installer.error is ModuleInstallException)
+                    /*if (installer.error is ModuleInstallException)
                         NonInstallFailedContent(
                             error = installer.error,
                             onClose = closeSheet
                         )
-                    else
-                        InstallFailedContent(
-                            baseEntity = baseEntity,
-                            appIcon = appIcon,
-                            installer = installer,
-                            viewModel = viewModel,
-                            onClose = closeSheet
-                        )
+                    else*/
+                    InstallFailedContent(
+                        baseEntity = baseEntity,
+                        appIcon = appIcon,
+                        installer = installer,
+                        viewModel = viewModel,
+                        onClose = closeSheet
+                    )
                 }
 
                 is InstallerViewState.InstallingModule -> {
