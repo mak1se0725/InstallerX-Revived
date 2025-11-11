@@ -284,17 +284,19 @@ fun InstallPrepareContent(
             }
         }
 
-        val canInstall = when (primaryEntity) {
-            // Modules don't have an SDK constraint, so they can always be installed.
-            is AppEntity.ModuleEntity -> true
-            // For APKs, perform the existing SDK version check.
-            is AppEntity.BaseEntity -> (primaryEntity.minSdk?.toIntOrNull()?.let { it <= Build.VERSION.SDK_INT } ?: true)
-            // Disable installation for any other unknown entity type.
-            else -> false
-        }
+        val canInstallBaseEntity = (primaryEntity as? AppEntity.BaseEntity)?.let {
+            it.minSdk?.toIntOrNull()?.let { sdk -> sdk <= Build.VERSION.SDK_INT } ?: true
+        } ?: false
 
-        // "Expand" / "Collapse" Button
-        if (viewModel.showExtendedMenu && canInstall)
+        val canInstallModuleEntity = (primaryEntity as? AppEntity.ModuleEntity)?.let {
+            viewModel.enableModuleInstall
+        } ?: false
+
+        val canInstall = canInstallBaseEntity || canInstallModuleEntity
+
+        val showExpandButton = canInstallBaseEntity && viewModel.showExtendedMenu
+
+        if (showExpandButton)
             item {
                 TextButton(
                     onClick = { isExpanded = !isExpanded },

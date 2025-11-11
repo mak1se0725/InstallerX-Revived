@@ -15,6 +15,7 @@ import com.rosan.installer.R
 import com.rosan.installer.data.app.model.entity.AppEntity
 import com.rosan.installer.data.app.model.entity.DataType
 import com.rosan.installer.data.app.model.entity.PackageAnalysisResult
+import com.rosan.installer.data.app.model.exception.ModuleInstallException
 import com.rosan.installer.data.app.repo.AppIconRepo
 import com.rosan.installer.data.app.repo.PARepo
 import com.rosan.installer.data.app.util.InstallOption
@@ -78,6 +79,7 @@ class InstallerViewModel(
         private set
     var showOPPOSpecial by mutableStateOf(false)
     private var autoSilentInstall by mutableStateOf(false)
+    var enableModuleInstall by mutableStateOf(false)
 
     // Text to show in the progress bar
     private val _installProgressText = MutableStateFlow<UiText?>(null)
@@ -189,6 +191,8 @@ class InstallerViewModel(
                 appDataStore.getBoolean(AppDataStore.DIALOG_SHOW_OPPO_SPECIAL, false).first()
             autoSilentInstall =
                 appDataStore.getBoolean(AppDataStore.DIALOG_AUTO_SILENT_INSTALL, false).first()
+            enableModuleInstall =
+                appDataStore.getBoolean(AppDataStore.LAB_ENABLE_MODULE_FLASH, false).first()
 
             // Load managed packages for installer selection.
             appDataStore.getNamedPackageList(AppDataStore.MANAGED_INSTALLER_PACKAGES_LIST).collect { packages ->
@@ -372,7 +376,7 @@ class InstallerViewModel(
                     is ProgressEntity.InstallFailed -> {
                         autoInstallJob?.cancel()
                         // If we were installing a module, just mark it as finished instead of switching state.
-                        if (state is InstallerViewState.InstallingModule) {
+                        if (state is InstallerViewState.InstallingModule && repo.error !is ModuleInstallException) {
                             newState = (state as InstallerViewState.InstallingModule).copy(isFinished = true)
                         } else {
                             newState = InstallerViewState.InstallFailed

@@ -1,5 +1,6 @@
 package com.rosan.installer.ui.page.miuix.installer.sheetcontent
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,8 +25,10 @@ import androidx.compose.ui.unit.sp
 import com.rosan.installer.R
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardColors
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
  * A Composable that displays the real-time output of a module installation process.
@@ -63,7 +65,11 @@ fun InstallModuleContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 300.dp)
-                .weight(1f, fill = false)
+                .weight(1f, fill = false),
+            colors = CardColors(
+                color = if (isSystemInDarkTheme()) Color.Black else Color.White,
+                contentColor = MiuixTheme.colorScheme.onSurface
+            )
         ) {
             LazyColumn(
                 state = lazyListState,
@@ -72,16 +78,16 @@ fun InstallModuleContent(
                 items(outputLines) { line ->
                     Text(
                         text = line,
-                        fontFamily = FontFamily.Monospace, // Monospace font is ideal for logs
+                        fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                         // Color-code the output: lines starting with "ERR:" will be red.
-                        color = if (line.startsWith("ERR:")) Color.Red else LocalContentColor.current
+                        color = if (line.startsWith("ERR:")) Color.Red else MiuixTheme.colorScheme.onSurface
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // The button at the bottom changes based on the finished state.
         if (isFinished) {
